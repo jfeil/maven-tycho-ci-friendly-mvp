@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Aggregator extends tycho-parent so that pomless modules (rcp-plugin, rcp-product) —
+      whose synthesized poms inherit from the first ancestor pom — pick up the Tycho extension
+      registration (eclipse-plugin/eclipse-repository packaging) and CI Friendly config.
+    -->
+    <parent>
+        <groupId>com.example.mvp</groupId>
+        <artifactId>tycho-parent</artifactId>
+        <version>${releaseVersion}${qualifier}</version>
+        <relativePath>tycho-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>maven-mvp-build</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Maven MVP :: Aggregator</name>
+    <description>Aggregator (build) POM. Builds every module in order with one `mvn clean install`.</description>
+
+    <build>
+        <!--
+          Pre-configure tycho-versions:set-version so `mvn tycho-versions:set-version
+          -DnewVersion=X` updates ALL three independent version-bearing trees in this repo:
+
+            1. "maven-mvp-build" — Maven CI Friendly side (aggregator → parents → plain Maven
+               modules via ${releaseVersion} property propagation)
+            2. "com.example.mvp.rcp.plugin" — MANIFEST.MF
+            3. "com.example.mvp.rcp.product" — .product file
+
+          Tycho's set-version walks one artifactId tree at a time; the three sources of truth
+          above are independent by design (each can be released independently in real-world
+          Tycho projects), so the roots have to be named explicitly. Hiding them here means
+          the CLI invocation stays a plain `mvn tycho-versions:set-version -DnewVersion=X`.
+        -->
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-versions-plugin</artifactId>
+                <version>${tycho.version}</version>
+                <configuration>
+                    <artifacts>maven-mvp-build,com.example.mvp.rcp.plugin,com.example.mvp.rcp.product</artifacts>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <modules>
+        <!-- Plain Maven parent must build first so child modules can resolve it. -->
+        <module>parent-pom</module>
+
+        <!-- Plain Maven modules: maven-lib is installed locally before Tycho needs it. -->
+        <module>maven-lib</module>
+        <module>maven-app</module>
+
+        <!-- Tycho parent extends the plain Maven parent. -->
+        <module>tycho-parent</module>
+
+        <!-- Target platform references maven-lib via Maven location → needs it installed first. -->
+        <module>target-platform</module>
+
+        <!--
+          Pomless Eclipse modules. tycho-build (.mvn/extensions.xml) detects them via the
+          MANIFEST.MF / .product files and synthesizes their poms at runtime.
+        -->
+        <module>rcp-plugin</module>
+        <module>rcp-product</module>
+    </modules>
+</project>

@@ -1,0 +1,4 @@
+Bundle-SymbolicName: com.example.mvp.maven-lib
+Bundle-Name: Maven MVP Library
+Export-Package: com.example.mvp.lib
+-noimportjava: true

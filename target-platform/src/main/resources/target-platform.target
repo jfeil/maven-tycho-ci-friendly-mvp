@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+<target name="maven-mvp-target" sequenceNumber="1">
+    <locations>
+        <!-- Eclipse 2024-03 platform: minimal runtime + executable launchers for the product. -->
+        <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="false" type="InstallableUnit">
+            <unit id="org.eclipse.osgi" version="0.0.0"/>
+            <unit id="org.eclipse.equinox.app" version="0.0.0"/>
+            <unit id="org.eclipse.core.runtime" version="0.0.0"/>
+            <unit id="org.eclipse.equinox.executable.feature.group" version="0.0.0"/>
+            <repository location="https://download.eclipse.org/releases/2024-03/"/>
+        </location>
+
+        <!--
+          Maven location: pulls the maven-lib artifact into the target platform.
+          @project.version@ is replaced by maven-resources-plugin at build time (Maven property
+          substitution does NOT happen inside .target files when Tycho reads them, so we
+          template-filter ourselves and tell tycho-packaging-plugin to read the filtered copy).
+          missingManifest=generate is a safety net; maven-lib already has a proper MANIFEST.MF
+          via bnd-maven-plugin.
+        -->
+        <location includeDependencyScope="compile" includeSource="false" missingManifest="generate" type="Maven">
+            <dependencies>
+                <dependency>
+                    <groupId>com.example.mvp</groupId>
+                    <artifactId>maven-lib</artifactId>
+                    <version>@project.version@</version>
+                    <type>jar</type>
+                </dependency>
+            </dependencies>
+        </location>
+    </locations>
+</target>

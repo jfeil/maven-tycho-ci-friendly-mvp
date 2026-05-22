@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Enables Tycho CI Friendly versioning. Without this extension, Tycho's lifecycle
+  validates MANIFEST/pom version equivalence too strictly, which prevents using
+  ${releaseVersion}${qualifier} on Tycho modules and breaks `-Dqualifier=` release
+  builds from snapshot-shaped sources.
+
+  See https://tycho.eclipseprojects.io/doc/main/TychoCiFriendly.html
+-->
+<extensions>
+    <extension>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-build</artifactId>
+        <version>4.0.8</version>
+    </extension>
+</extensions>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.example.mvp</groupId>
+        <artifactId>parent-pom</artifactId>
+        <version>${releaseVersion}${qualifier}</version>
+        <relativePath>../parent-pom/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>tycho-parent</artifactId>
+    <version>${releaseVersion}${qualifier}</version>
+    <packaging>pom</packaging>
+
+    <name>Maven MVP :: Tycho Parent POM</name>
+    <description>Second parent POM. Inherits from parent-pom and configures Tycho with CI-friendly versioning.</description>
+
+    <properties>
+        <tycho.version>4.0.8</tycho.version>
+        <!--
+          Tycho CI Friendly versioning: ${qualifier} is the suffix that follows the OSGi
+          major.minor.micro triplet. Tycho will (a) strip a leading '-' before replacing
+          .qualifier in MANIFEST.MF and (b) at install/deploy time, replace .qualifier with
+          either '-SNAPSHOT' or the build timestamp depending on the qualifier value.
+        -->
+        <tycho.buildqualifier.format>yyyyMMdd-HHmm</tycho.buildqualifier.format>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-maven-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                    <extensions>true</extensions>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>target-platform-configuration</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-packaging-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-p2-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-p2-publisher-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-p2-director-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-p2-repository-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+                <!--
+                  Manual version bump: rewrites pom.xml + MANIFEST.MF + .product in one go.
+                  Use this when changing major.minor.micro:
+                    mvn tycho-versions:set-version -DnewVersion=2.0.0-SNAPSHOT
+                -->
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-versions-plugin</artifactId>
+                    <version>${tycho.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-maven-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>target-platform-configuration</artifactId>
+                <configuration>
+                    <target>
+                        <artifact>
+                            <groupId>com.example.mvp</groupId>
+                            <artifactId>target-platform</artifactId>
+                            <version>${project.version}</version>
+                        </artifact>
+                    </target>
+                    <environments>
+                        <environment>
+                            <os>linux</os>
+                            <ws>gtk</ws>
+                            <arch>x86_64</arch>
+                        </environment>
+                        <environment>
+                            <os>win32</os>
+                            <ws>win32</ws>
+                            <arch>x86_64</arch>
+                        </environment>
+                        <environment>
+                            <os>macosx</os>
+                            <ws>cocoa</ws>
+                            <arch>x86_64</arch>
+                        </environment>
+                    </environments>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-packaging-plugin</artifactId>
+                <configuration>
+                    <format>${tycho.buildqualifier.format}</format>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

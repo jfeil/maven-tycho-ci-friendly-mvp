@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.example.mvp</groupId>
+        <artifactId>tycho-parent</artifactId>
+        <version>${releaseVersion}${qualifier}</version>
+        <relativePath>../tycho-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>target-platform</artifactId>
+    <packaging>eclipse-target-definition</packaging>
+
+    <name>Maven MVP :: Target Platform</name>
+    <description>Defines the Eclipse target platform consumed by all Tycho modules.</description>
+
+    <build>
+        <!--
+          Filter the .target template to the project root. Tycho's package-target-definition
+          mojo only scans ${basedir} for *.target files (no override available), so we have to
+          land the filtered copy there. The unfiltered source lives in src/main/resources/.
+        -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>target-platform.target</include>
+                </includes>
+                <targetPath>${project.basedir}</targetPath>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.3.2</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}</directory>
+                            <includes>
+                                <include>target-platform.target</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <useDefaultDelimiters>false</useDefaultDelimiters>
+                    <delimiters>
+                        <delimiter>@</delimiter>
+                    </delimiters>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>filter-target</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Maven MVP RCP Plugin
+Bundle-SymbolicName: com.example.mvp.rcp.plugin;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: example.com
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-ActivationPolicy: lazy
+Bundle-Activator: com.example.mvp.rcp.plugin.Activator
+Import-Package: com.example.mvp.lib;version="0.0.0",
+ org.osgi.framework;version="1.10.0"

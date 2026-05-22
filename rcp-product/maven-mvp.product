@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="Maven MVP Product" uid="com.example.mvp.rcp.product" id="com.example.mvp.rcp.plugin.product" application="org.eclipse.equinox.app.error" version="1.0.0.qualifier" type="bundles" includeLaunchers="true" autoIncludeRequirements="true">
+
+    <configIni use="default"/>
+
+    <launcherArgs>
+        <vmArgs>-Dosgi.requiredJavaVersion=17</vmArgs>
+    </launcherArgs>
+
+    <launcher name="maven-mvp">
+        <linux icon="icon.xpm"/>
+        <macosx icon="icon.icns"/>
+        <win useIco="false">
+            <bmp/>
+        </win>
+    </launcher>
+
+    <plugins>
+        <plugin id="com.example.mvp.rcp.plugin"/>
+        <plugin id="com.example.mvp.maven-lib"/>
+        <plugin id="org.eclipse.osgi"/>
+        <plugin id="org.eclipse.equinox.app"/>
+        <plugin id="org.eclipse.core.runtime"/>
+    </plugins>
+
+    <configurations>
+        <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="4"/>
+        <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2"/>
+        <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="2"/>
+    </configurations>
+
+</product>
