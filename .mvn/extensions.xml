@@ -5,12 +5,15 @@
   ${releaseVersion}${qualifier} on Tycho modules and breaks `-Dqualifier=` release
   builds from snapshot-shaped sources.
 
+  ${tycho.version} comes from .mvn/maven.config (extensions.xml is loaded before
+  the pom, so plain pom properties can't be referenced — maven.config bridges it).
+
   See https://tycho.eclipseprojects.io/doc/main/TychoCiFriendly.html
 -->
 <extensions>
     <extension>
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>tycho-build</artifactId>
-        <version>4.0.8</version>
+        <version>${tycho.version}</version>
     </extension>
 </extensions>

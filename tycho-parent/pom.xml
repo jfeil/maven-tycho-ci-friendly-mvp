@@ -19,8 +19,11 @@
     <description>Second parent POM. Inherits from parent-pom and configures Tycho with CI-friendly versioning.</description>
 
     <properties>
-        <tycho.version>4.0.8</tycho.version>
         <!--
+          ${tycho.version} is sourced from .mvn/maven.config so that both this pom AND
+          .mvn/extensions.xml (which loads before any pom is parsed) see the same value.
+          Override per-build via -Dtycho.version=… on the CLI.
+
           Tycho CI Friendly versioning: ${qualifier} is the suffix that follows the OSGi
           major.minor.micro triplet. Tycho will (a) strip a leading '-' before replacing
           .qualifier in MANIFEST.MF and (b) at install/deploy time, replace .qualifier with
