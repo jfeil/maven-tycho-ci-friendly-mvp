@@ -13,7 +13,7 @@ Prototype demonstrating a mixed Maven + Tycho build using **Tycho CI Friendly Ve
 ├── maven-app/           # plain Maven jar, depends on maven-lib
 ├── tycho-parent/        # 2nd parent — inherits parent-pom, configures Tycho 4.0
 ├── target-platform/     # eclipse-target-definition: .target file w/ Eclipse + maven-lib
-├── rcp-plugin/          # POMLESS eclipse-plugin — only META-INF/MANIFEST.MF + sources
+├── rcp-plugin/          # POMLESS eclipse-plugin — META-INF/MANIFEST.MF + plugin.xml + sources
 └── rcp-product/         # POMLESS eclipse-repository — only .product + category.xml
 ```
 
@@ -53,12 +53,22 @@ Produces `1.0.0` (Maven) / `1.0.0.<timestamp>` (OSGi, release). No file edits.
 The OSGi side can't be overridden by a Maven property — `Bundle-Version` is a literal in MANIFEST.MF. Use `tycho-versions:set-version` to update all three independent sources of truth (Maven property, MANIFEST, .product) atomically:
 
 ```
-mvn org.eclipse.tycho:tycho-versions-plugin:4.0.8:set-version -DnewVersion=2.0.0-SNAPSHOT
+mvn validate org.eclipse.tycho:tycho-versions-plugin:4.0.8:set-version -DnewVersion=2.0.0-SNAPSHOT
 mvn clean install                         # 2.0.0-SNAPSHOT everywhere
 mvn clean install -Dqualifier=            # 2.0.0 release
 ```
 
-The set of artifact-roots that need updating is preconfigured in the aggregator's plugin block (see `pom.xml`), so the CLI invocation has no `-Dartifacts=…` clutter. If you add another bundle or product, append its artifactId to that list once.
+The `validate` phase runs a `gmavenplus` script that **auto-discovers** the artifactId list `set-version` needs to walk (the aggregator + every `Bundle-SymbolicName` and `.product` `uid` found under the scan roots). No hand-edited list to keep in sync when modules come and go.
+
+Where it scans is controlled by `${rcp.discovery.dirs}` (defaults to `rcp-*`). Override per-build with `-Drcp.discovery.dirs=…` or set it in the aggregator pom. Comma-separated patterns:
+
+| Pattern | Meaning |
+|---|---|
+| `rcp-*` | direct sibling directories matching `rcp-*` (default) |
+| `bundles/*,products/*` | one level under each parent dir |
+| `rcp/**` | recursive — every directory under `rcp/`, skipping `target/` and dotdirs |
+| `../../abc/apps/rcp/**` | external + recursive; relative `..` works |
+| `rcp-*,bundles/**` | mix in-tree and recursive |
 
 In CI/CD this is a transient change in the workspace — no commit needed.
 
@@ -81,6 +91,7 @@ mvn -pl :com.example.mvp.rcp.plugin -am clean install
 | Plain-Maven CI versioning       | `${releaseVersion}${qualifier}` + `flatten-maven-plugin` to resolve in installed poms |
 | Tycho CI versioning             | Same property pair on the Maven side; OSGi side driven independently by MANIFEST/.product |
 | Pomless modules                 | `.mvn/extensions.xml` registers `tycho-build`; bundles/products inherit from first ancestor pom (the aggregator) |
+| Set-version artifact discovery  | `gmavenplus-plugin` script (bound to `validate`) scans `${rcp.discovery.dirs}` for `MANIFEST.MF` + `.product` files, feeds the resulting artifactId list into `tycho-versions-plugin` |
 | MANIFEST/pom version sync       | Not needed — Maven side has no MANIFEST and OSGi side has no pom |
 | `maven-lib` → RCP plugin        | `.target` file with `<location type="Maven">`; version filtered via `maven-resources-plugin` |
 | Build order                     | Aggregator: parent-pom → maven-lib → maven-app → tycho-parent → target-platform → rcp-plugin → rcp-product |
@@ -100,3 +111,5 @@ Pomless modules import fine into Eclipse — just not as Maven projects. Two opt
 - First build downloads the Eclipse 2024-03 P2 repo (~80 MB); cached afterwards.
 - `target-platform/target-platform.target` at the project root is **generated** during the build (filtered from `src/main/resources/target-platform.target`). `clean` removes it.
 - The aggregator pom has `<parent>tycho-parent</parent>` so pomless modules see Tycho's plugin registration via inheritance. This creates a slightly unusual loop (the aggregator's `<modules>` includes its own parent) which Maven resolves fine — parent refs are processed before module lists.
+- `rcp-plugin/plugin.xml` declares the product extension referenced by `rcp-product/maven-mvp.product` (`id="com.example.mvp.rcp.plugin.product"`). Without it the product builds but won't actually launch at runtime.
+- `set-version` walks cross-references via property expressions only — once it has rewritten `${releaseVersion}${qualifier}` into a literal version on a path it traversed (e.g. in `dependencyManagement`), subsequent runs won't refresh that field. The fields it leaves alone (project `<version>`, parent `<version>` references) stay as expressions across runs.
