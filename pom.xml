@@ -22,28 +22,121 @@
     <name>Maven MVP :: Aggregator</name>
     <description>Aggregator (build) POM. Builds every module in order with one `mvn clean install`.</description>
 
-    <build>
+    <properties>
         <!--
-          Pre-configure tycho-versions:set-version so `mvn tycho-versions:set-version
-          -DnewVersion=X` updates ALL three independent version-bearing trees in this repo:
-
-            1. "maven-mvp-build" — Maven CI Friendly side (aggregator → parents → plain Maven
-               modules via ${releaseVersion} property propagation)
-            2. "com.example.mvp.rcp.plugin" — MANIFEST.MF
-            3. "com.example.mvp.rcp.product" — .product file
-
-          Tycho's set-version walks one artifactId tree at a time; the three sources of truth
-          above are independent by design (each can be released independently in real-world
-          Tycho projects), so the roots have to be named explicitly. Hiding them here means
-          the CLI invocation stays a plain `mvn tycho-versions:set-version -DnewVersion=X`.
+          Comma-separated list of directory glob patterns (relative to this pom) to scan for
+          pomless RCP content (MANIFEST.MF, *.product). Defaults to "rcp-*" — siblings of this
+          pom whose name starts with "rcp-". Override per-build via -Drcp.discovery.dirs=…,
+          or set permanently here. Supports one nesting level, e.g. "bundles/*,products/*".
         -->
+        <rcp.discovery.dirs>rcp-*</rcp.discovery.dirs>
+    </properties>
+
+    <build>
         <plugins>
+            <!--
+              Auto-discover the set of artifactIds that tycho-versions:set-version needs to
+              walk. The aggregator's Maven-CI-Friendly side is rooted at this pom's own
+              artifactId; the pomless OSGi side is rooted at each MANIFEST.MF's
+              Bundle-SymbolicName and each .product file's uid attribute.
+
+              Where to scan is controlled by the ${rcp.discovery.dirs} property (defined above)
+              — comma-separated glob patterns, e.g.:
+                  rcp-*                # default: sibling rcp-* directories (shallow)
+                  bundles/*            # one level under bundles/
+                  rcp/**               # recursive: every directory under rcp/
+                  ../../abc/rcp/**     # external root + recursive
+                  rcp-*,bundles/**     # mix
+              A trailing /** means "walk recursively from here, skipping target/ and dotdirs".
+
+              The discovered list is exposed as ${rcp.artifacts} and consumed below by
+              tycho-versions-plugin. Bound to `validate` so it runs before set-version when
+              you invoke `mvn validate tycho-versions:set-version -DnewVersion=…`.
+            -->
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>3.0.2</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>4.0.21</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>discover-rcp-artifacts</id>
+                        <phase>validate</phase>
+                        <goals><goal>execute</goal></goals>
+                        <configuration>
+                            <scripts>
+                                <script><![CDATA[
+                                    def roots = [project.artifactId]
+                                    def scanModule = { dir ->
+                                        def manifest = new File(dir, 'META-INF/MANIFEST.MF')
+                                        if (manifest.exists()) {
+                                            manifest.readLines()
+                                                .find { it.startsWith('Bundle-SymbolicName:') }
+                                                ?.replaceFirst(/Bundle-SymbolicName:\s*/, '')
+                                                ?.replaceFirst(/;.*$/, '')
+                                                ?.trim()
+                                                ?.with { roots << it }
+                                        }
+                                        dir.listFiles({ f -> f.name.endsWith('.product') } as FileFilter)?.each { product ->
+                                            def m = (product.text =~ /uid="([^"]+)"/)
+                                            if (m) roots << m[0][1]
+                                        }
+                                    }
+                                    def patternsRaw = session.userProperties['rcp.discovery.dirs'] ?:
+                                                      project.properties['rcp.discovery.dirs'] ?: 'rcp-*'
+                                    def patterns = patternsRaw.split(',').collect { it.trim() }.findAll { it }
+                                    if (!patterns) patterns = ['rcp-*']
+                                    def excluded = { File f -> f.name == 'target' || f.name.startsWith('.') }
+                                    patterns.each { pattern ->
+                                        def recursive = pattern.endsWith('/**') || pattern == '**'
+                                        def rootPattern = pattern == '**' ? '' :
+                                                          recursive ? pattern[0..-4] : pattern
+                                        def rootDirs = []
+                                        if (rootPattern.isEmpty()) {
+                                            rootDirs << project.basedir
+                                        } else {
+                                            def parts = rootPattern.split('/')
+                                            def parentDir = parts.size() == 1
+                                                ? project.basedir
+                                                : new File(project.basedir, parts[0..-2].join('/'))
+                                            def leaf = parts[-1].replace('.', '\\.').replace('*', '.*')
+                                            if (parentDir.exists()) {
+                                                parentDir.eachDirMatch(~leaf) { rootDirs << it }
+                                            }
+                                        }
+                                        rootDirs.each { rootDir ->
+                                            scanModule(rootDir)
+                                            if (recursive) {
+                                                rootDir.traverse(
+                                                    type: groovy.io.FileType.DIRECTORIES,
+                                                    excludeFilter: excluded
+                                                ) { scanModule(it) }
+                                            }
+                                        }
+                                    }
+                                    def list = roots.unique().join(',')
+                                    project.properties['rcp.artifacts'] = list
+                                    log.info("Discovered rcp.artifacts (patterns=${patterns}) = ${list}")
+                                ]]></script>
+                            </scripts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.eclipse.tycho</groupId>
                 <artifactId>tycho-versions-plugin</artifactId>
                 <version>${tycho.version}</version>
                 <configuration>
-                    <artifacts>maven-mvp-build,com.example.mvp.rcp.plugin,com.example.mvp.rcp.product</artifacts>
+                    <artifacts>${rcp.artifacts}</artifacts>
                 </configuration>
             </plugin>
         </plugins>
