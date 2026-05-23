@@ -14,5 +14,3 @@ target-platform/target-platform.target
 .settings/
 .metadata/
 
-# Maven
-.flattened-pom.xml

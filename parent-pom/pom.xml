@@ -75,6 +75,11 @@
                 <configuration>
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
                     <updatePomFile>true</updatePomFile>
+                    <!--
+                      Land the flattened pom under target/ so it gets removed by `mvn clean`
+                      along with every other build artifact, instead of cluttering project roots.
+                    -->
+                    <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
@@ -82,13 +87,6 @@
                         <phase>process-resources</phase>
                         <goals>
                             <goal>flatten</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>flatten-clean</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
                         </goals>
                     </execution>
                 </executions>
