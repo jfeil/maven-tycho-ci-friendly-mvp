@@ -13,18 +13,17 @@
 
         <!--
           Maven location: pulls the maven-lib artifact into the target platform.
-          @project.version@ is replaced by maven-resources-plugin at build time (Maven property
-          substitution does NOT happen inside .target files when Tycho reads them, so we
-          template-filter ourselves and tell tycho-packaging-plugin to read the filtered copy).
-          missingManifest=generate is a safety net; maven-lib already has a proper MANIFEST.MF
-          via bnd-maven-plugin.
+          @releaseVersion@@qualifier@ is replaced by maven-resources-plugin at build time
+          (Maven property substitution does NOT happen inside .target files when Tycho reads
+          them, so we template-filter ourselves). missingManifest=generate is a safety net;
+          maven-lib already has a proper MANIFEST.MF via bnd-maven-plugin.
         -->
         <location includeDependencyScope="compile" includeSource="false" missingManifest="generate" type="Maven">
             <dependencies>
                 <dependency>
                     <groupId>com.example.mvp</groupId>
                     <artifactId>maven-lib</artifactId>
-                    <version>@project.version@</version>
+                    <version>@releaseVersion@@qualifier@</version>
                     <type>jar</type>
                 </dependency>
             </dependencies>

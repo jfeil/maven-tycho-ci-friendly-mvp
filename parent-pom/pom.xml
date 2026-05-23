@@ -36,7 +36,7 @@
             <dependency>
                 <groupId>com.example.mvp</groupId>
                 <artifactId>maven-lib</artifactId>
-                <version>${project.version}</version>
+                <version>${releaseVersion}${qualifier}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

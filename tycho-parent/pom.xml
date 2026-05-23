@@ -96,7 +96,7 @@
                         <artifact>
                             <groupId>com.example.mvp</groupId>
                             <artifactId>target-platform</artifactId>
-                            <version>${project.version}</version>
+                            <version>${releaseVersion}${qualifier}</version>
                         </artifact>
                     </target>
                     <environments>
